@@ -25,11 +25,11 @@
         <div v-else-if="error" class="results-error">{{ error }}</div>
         <ul v-else class="results-list">
           <li
-            v-for=\"plant in results\"
-            :key=\"plant.id\"
-            class=\"result-item\"
-            :class=\"{ 'is-added': hasPlant(plant.id) }\"
-            @click=\"selectPlant(plant)\"
+            v-for="plant in results"
+            :key="plant.id"
+            class="result-item"
+            :class="{ 'is-added': hasPlant(plant.id) }"
+            @click="selectPlant(plant)"
           >
             <img
               v-if="plant.default_image?.thumbnail"
