@@ -129,71 +129,38 @@ function coverageStyle(month: number) {
 </script>
 
 <style scoped>
+/* ==========================================================================
+   1. MOBILE PRIMITIVE STYLES (Default / Base Layout)
+   ========================================================================== */
+
 .calendar-wrap {
-  overflow-x: auto;
-  padding-bottom: .5rem;
+  padding: 1rem 0;
 }
 
-/* ── Grid base ── */
-.cal-grid {
-  display: grid;
-  grid-template-columns: 190px repeat(12, minmax(56px, 1fr));
-  min-width: 870px;
-  align-items: center;
-}
-
-/* ── Month header ── */
-.cal-month-head {
-  text-align: center;
-  padding: .4rem .1rem .7rem;
-  font-size: .72rem;
-  font-weight: 500;
-  color: var(--moss-lt);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  position: relative;
-}
-.cal-month-head.is-current {
-  color: var(--moss);
-  font-weight: 600;
-}
-.cal-month-head.is-current::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%; transform: translateX(-50%);
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: var(--gold);
-}
-/* Responsive: abbreviate month names */
-.month-full { display: none; }
-@media (min-width: 1200px) {
-  .month-full { display: inline; }
-  .month-abbr { display: none; }
-}
-
-/* ── Label column ── */
-.cal-label-col {
-  padding-right: 1rem;
-}
-
-/* ── Plant row ── */
+/* On mobile, rows behave like stacked individual cards instead of grid rows */
 .plant-row {
-  border-top: 1px solid var(--parchment-dk);
-  padding: .35rem 0;
+  border: 1px solid var(--parchment-dk);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
+/* Plant label layout adjustments for mobile */
 .plant-label {
   display: flex;
   align-items: center;
-  gap: .6rem;
-  min-width: 0;
+  gap: .75rem;
+  width: 100%;
 }
 
 .plant-thumb {
-  width: 36px; height: 36px;
-  border-radius: 6px;
+  width: 44px; 
+  height: 44px;
+  border-radius: 8px;
   object-fit: cover;
   flex-shrink: 0;
   background: var(--sage-lt);
@@ -202,7 +169,7 @@ function coverageStyle(month: number) {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
 }
 
 .plant-meta {
@@ -211,8 +178,8 @@ function coverageStyle(month: number) {
 }
 .plant-name {
   display: block;
-  font-size: .82rem;
-  font-weight: 500;
+  font-size: .95rem;
+  font-weight: 600;
   color: var(--ink);
   text-transform: capitalize;
   white-space: nowrap;
@@ -221,7 +188,7 @@ function coverageStyle(month: number) {
 }
 .plant-sci {
   display: block;
-  font-size: .7rem;
+  font-size: .75rem;
   color: var(--moss-lt);
   font-style: italic;
   white-space: nowrap;
@@ -233,31 +200,36 @@ function coverageStyle(month: number) {
   background: none;
   border: none;
   color: var(--sage);
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   cursor: pointer;
   flex-shrink: 0;
   line-height: 1;
-  padding: 0 .2rem;
+  padding: .2rem .5rem;
   transition: color .15s;
 }
 .remove-btn:hover { color: #c05050; }
 
-/* ── Calendar cell ── */
-.cal-cell {
-  height: 40px;
+/* Mobile Month Container: Converts cells into small inline tags */
+.plant-row .cal-cell {
+  display: inline-flex;
+  height: auto;
   position: relative;
 }
-.cal-cell.is-current-col {
-  background: rgba(197,149,74,.06);
+
+/* Hide empty months on mobile to save vertical space */
+.plant-row .no-bloom {
+  display: none;
 }
 
-/* ── Bloom bar ── */
+/* Make bloom bars look like pill tags on mobile */
 .bloom-bar {
-  position: absolute;
-  inset: 6px 0;
   display: flex;
+  width: 100%;
+  height: 24px;
+  border-radius: 12px !important; /* Force pill shape on mobile */
+  margin: 0 !important;
   overflow: hidden;
-  transition: filter .2s;
+  position: relative;
 }
 .bloom-bar:hover { filter: brightness(1.08); cursor: default; }
 
@@ -266,48 +238,13 @@ function coverageStyle(month: number) {
   min-width: 3px;
 }
 
-.no-bloom { height: 100%; }
-
-/* ── Coverage row ── */
+/* Hide complex global headers/coverage on mobile devices */
+.cal-month-head,
 .coverage-row {
-  border-top: 2px solid var(--parchment-dk);
-  margin-top: .4rem;
-  padding-top: .3rem;
+  display: none;
 }
 
-.coverage-label {
-  font-size: .72rem;
-  font-weight: 500;
-  color: var(--sage);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  padding-right: 1rem;
-}
-
-.coverage-cell {
-  height: 44px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 2px;
-  padding-bottom: 4px;
-}
-
-.coverage-bar {
-  width: 70%;
-  border-radius: 3px 3px 0 0;
-  transition: height .4s ease, background .4s ease;
-  min-height: 0;
-}
-
-.coverage-count {
-  font-size: .68rem;
-  color: var(--moss-lt);
-  font-weight: 500;
-}
-
-/* ── Empty state ── */
+/* Empty State */
 .empty-state {
   text-align: center;
   padding: 3rem 1rem;
@@ -323,9 +260,156 @@ function coverageStyle(month: number) {
   font-style: italic;
 }
 
-/* ── Row transitions ── */
+/* Row animations */
 .row-enter-active { transition: all .35s cubic-bezier(.25,.8,.25,1); }
 .row-leave-active { transition: all .2s ease; }
 .row-enter-from { opacity: 0; transform: translateX(-12px); }
 .row-leave-to   { opacity: 0; transform: translateX(12px); }
+
+
+/* ==========================================================================
+   2. DESKTOP BREAKPOINT (Enforces Timeline Grid)
+   ========================================================================== */
+
+@media (min-width: 870px) {
+  .calendar-wrap {
+    overflow-x: auto;
+    padding-bottom: .5rem;
+  }
+
+  /* Reactivate structural timeline grid */
+  .cal-grid {
+    display: grid;
+    grid-template-columns: 190px repeat(12, minmax(56px, 1fr));
+    min-width: 870px;
+    align-items: center;
+  }
+
+  /* Reset row styling from card layout back to inline grid rows */
+  .plant-row {
+    border: none;
+    border-top: 1px solid var(--parchment-dk);
+    border-radius: 0;
+    padding: .35rem 0;
+    margin-bottom: 0;
+    background: transparent;
+    display: grid; 
+    gap: 0;
+  }
+
+  .plant-label {
+    padding-right: 1rem;
+    width: auto;
+  }
+
+  .plant-thumb {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+  }
+
+  .plant-name { font-size: .82rem; font-weight: 500; }
+  .plant-sci { font-size: .7rem; }
+  .remove-btn { font-size: 1.2rem; padding: 0 .2rem; }
+
+  /* Restore desktop calendar layout */
+  .cal-month-head {
+    display: block;
+    text-align: center;
+    padding: .4rem .1rem .7rem;
+    font-size: .72rem;
+    font-weight: 500;
+    color: var(--moss-lt);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    position: relative;
+  }
+  .cal-month-head.is-current {
+    color: var(--moss);
+    font-weight: 600;
+  }
+  .cal-month-head.is-current::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+
+  /* Month Name Text Responsiveness */
+  .month-full { display: none; }
+  .month-abbr { display: inline; }
+
+  .plant-row .cal-cell {
+    display: block;
+    height: 40px;
+  }
+  .cal-cell.is-current-col {
+    background: rgba(197,149,74,.06);
+  }
+
+  /* Bring back structural grid logic for non-blooming periods */
+  .plant-row .no-bloom {
+    display: block;
+    height: 100%;
+  }
+
+  /* Revert bloom bars to continuous line segments */
+  .bloom-bar {
+    position: absolute;
+    inset: 6px 0;
+    height: auto;
+  }
+
+  /* Reactivate coverage system */
+  .coverage-row {
+    display: grid;
+    border-top: 2px solid var(--parchment-dk);
+    margin-top: .4rem;
+    padding-top: .3rem;
+  }
+
+  .coverage-label {
+    display: block;
+    font-size: .72rem;
+    font-weight: 500;
+    color: var(--sage);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    padding-right: 1rem;
+  }
+
+  .coverage-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+    padding-bottom: 4px;
+    height: 44px;
+  }
+
+  .coverage-bar {
+    width: 70%;
+    border-radius: 3px 3px 0 0;
+    transition: height .4s ease, background .4s ease;
+    min-height: 0;
+  }
+
+  .coverage-count {
+    font-size: .68rem;
+    color: var(--moss-lt);
+    font-weight: 500;
+  }
+}
+
+/* ==========================================================================
+   3. LARGE SCREEN EXTRA ENHANCEMENTS
+   ========================================================================== */
+@media (min-width: 1200px) {
+  .month-full { display: inline; }
+  .month-abbr { display: none; }
+}
 </style>
