@@ -8,7 +8,7 @@
         v-model="query"
         type="text"
         class="search-input"
-        placeholder="Search plants — rose, lavender, tulip…"
+        placeholder="Search plants - rose, lavender, tulip..."
         @input="onInput"
         @keydown.enter="doSearch"
         autocomplete="off"
