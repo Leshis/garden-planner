@@ -1,0 +1,54 @@
+/* Garden Bloom Calendar — Global Styles */
+/* Aesthetic: Botanical journal — warm parchment, ink greens, pressed-flower softness */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --parchment:    #f7f3ec;
+  --parchment-dk: #ede6d8;
+  --ink:          #1e2d1f;
+  --ink-soft:     #3d4f3e;
+  --moss:         #4a6741;
+  --moss-lt:      #6b8f62;
+  --sage:         #8faa84;
+  --sage-lt:      #c2d4bc;
+  --twig:         #8a6a45;
+  --cream:        #faf7f2;
+  --gold:         #c5954a;
+
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+
+  --radius-sm: 4px;
+  --radius:    10px;
+  --radius-lg: 20px;
+  --shadow:    0 2px 16px rgba(30,45,31,.09);
+  --shadow-lg: 0 8px 40px rgba(30,45,31,.14);
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 300;
+  line-height: 1.6;
+  min-height: 100vh;
+  background-image:
+    url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60 10 Q65 30 80 35 Q65 40 60 60 Q55 40 40 35 Q55 30 60 10Z' fill='%234a6741' opacity='0.022'/%3E%3C/svg%3E");
+}
+
+/* ─── Typography ─── */
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.2; }
+h1 { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 400; }
+h2 { font-size: 1.5rem; font-weight: 600; }
+h3 { font-size: 1.1rem; font-weight: 400; font-style: italic; }
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--parchment-dk); }
+::-webkit-scrollbar-thumb { background: var(--sage); border-radius: 99px; }
+
+/* ─── Utility ─── */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
