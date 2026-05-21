@@ -51,7 +51,7 @@
             v-if="plant.bloom_months.includes(mi + 1)"
             class="bloom-bar"
             :style="bloomBarStyle(plant, mi)"
-            :title="`${plant.common_name} blooms — ${plant.flower_color ?? 'unknown colour'}`"
+            :title="plant.common_name + ' blooms - ' + (plant.flower_color ?? 'unknown colour')"
           >
             <div
               v-for="(hex, ci) in plant.hex_colours"
