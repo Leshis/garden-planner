@@ -91,7 +91,9 @@ async function doSearch() {
     results.value = res.data ?? []
     hasMore.value = res.current_page < res.last_page
   } catch (e: any) {
-    error.value = 'Could not reach plant database. Check your API key in .env'
+    // Stringify the full error details so you can read the API status or message on your mobile screen
+    const errorDetails = e.response?._data?.message || e.message || JSON.stringify(e);
+    error.value = `API Error: ${errorDetails}`;
     console.error(e)
   } finally {
     loading.value = false
@@ -105,6 +107,10 @@ async function loadMore() {
     const res = await searchPlants(query.value, apiKey, page.value)
     results.value.push(...(res.data ?? []))
     hasMore.value = res.current_page < res.last_page
+  } catch (e: any) {
+    const errorDetails = e.response?._data?.message || e.message || JSON.stringify(e);
+    error.value = `Load more failed: ${errorDetails}`;
+    console.error(e)
   } finally {
     loadingMore.value = false
   }
@@ -117,10 +123,12 @@ async function selectPlant(plant: PerenualSearchResult) {
     const gardenPlant = toGardenPlant(detail)
     const added = addPlant(gardenPlant)
     if (added) {
-      // brief flash
       clearSearch()
     }
-  } catch (e) {
+  } catch (e: any) {
+    // Expose detail-fetching issues directly to the UI error state
+    const errorDetails = e.response?._data?.message || e.message || JSON.stringify(e);
+    error.value = `Detail fetch failed: ${errorDetails}`;
     console.error('Failed to fetch plant detail', e)
   }
 }
@@ -131,6 +139,7 @@ function clearSearch() {
   error.value = ''
 }
 </script>
+
 
 <style scoped>
 .search-wrap { position: relative; width: 100%; max-width: 560px; }
