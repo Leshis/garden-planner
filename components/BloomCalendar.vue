@@ -88,17 +88,21 @@ const MONTHS = ['January','February','March','April','May','June',
 
 const currentMonth = new Date().getMonth() + 1
 
-// Helper function to build a single blended stripe if multiple variants exist
+// Helper to determine the single bar color look dynamically
 function getBarBackground(colours: string[]): string {
   if (!colours || colours.length === 0) return 'var(--sage)'
-  if (colours.length === 1) return colours[0]
   
-  const stopPercentage = 100 / colours.length
-  const gradientStops = colours.map((color, index) => {
-    return `${color} ${index * stopPercentage}%, ${color} ${(index + 1) * stopPercentage}%`
-  }).join(', ')
+  // If the plant has multiple color variants selected, we blend them into ONE single bar layout
+  if (colours.length > 1) {
+    const stopPercentage = 100 / colours.length
+    const gradientStops = colours.map((color, index) => {
+      return `${color} ${index * stopPercentage}%, ${color} ${(index + 1) * stopPercentage}%`
+    }).join(', ')
+    return `linear-gradient(to right, ${gradientStops})`
+  }
   
-  return `linear-gradient(to right, ${gradientStops})`
+  // Default fallback for single color variant selections
+  return colours[0]
 }
 
 function bloomBarStyle(plant: GardenPlant, monthIndex: number) {
@@ -222,16 +226,17 @@ function coverageStyle(month: number) {
   display: none;
 }
 
+/* Single clean tag bar layout adjustments */
 .bloom-bar {
   display: flex;
   width: 100%;
-  height: 24px;
-  border-radius: 12px !important;
+  height: 20px;
+  border-radius: 12px !important; 
   margin: 0 !important;
   overflow: hidden;
   position: relative;
   border: 1px solid rgba(0, 0, 0, 0.15);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 .bloom-bar:hover { filter: brightness(1.08); cursor: default; }
 
@@ -345,10 +350,12 @@ function coverageStyle(month: number) {
     height: 100%;
   }
 
+  /* Desktop-specific layout bar optimization */
   .bloom-bar {
     position: absolute;
-    inset: 9px 0;
-    height: auto;
+    inset: 13px 0;
+    height: 14px;
+    border-radius: 0 !important;
   }
 
   .coverage-row {
