@@ -17,18 +17,6 @@
       </div>
     </header>
 
-    <div v-if="showKeyNotice" class="key-notice">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-        <path d="M10 2a6 6 0 00-6 6v.342A7 7 0 002 10a7 7 0 1014 0 7 7 0 00-2-.658V8a6 6 0 00-6-6z"/>
-      </svg>
-      <span>
-        Add your <strong>Perenual API key</strong> in a <code>.env</code> file as
-        <code>NUXT_PUBLIC_PERENUAL_KEY=sk-YOUR_KEY</code> to unlock plant search.
-        Free keys at <a href="https://perenual.com/docs/api" target="_blank" rel="noopener">perenual.com</a>.
-      </span>
-      <button class="notice-close" @click="showKeyNotice = false">×</button>
-    </div>
-
     <main class="main">
 
       <ColourPalette v-if="plants.length > 0" class="palette-section" />
@@ -57,16 +45,13 @@
     </main>
 
     <footer class="footer">
-      Plant data from <a href="https://perenual.com" target="_blank" rel="noopener">Perenual API</a>.
-      Bloom times are approximate and vary by climate &amp; cultivar.
+      Powered by Gemini Intelligence • Cultivating Beautiful Successions. Bloom times are approximate and vary by climate &amp; cultivar.
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
 const { plants, loadGarden } = useGarden()
-
-const showKeyNotice = ref(true)
 
 onMounted(() => {
   loadGarden()
@@ -124,35 +109,6 @@ onMounted(() => {
   flex: 1;
   display: flex;
   justify-content: flex-end;
-}
-
-/* ── Key notice ── */
-.key-notice {
-  background: #fef8ec;
-  border-bottom: 1px solid #f0ddb0;
-  padding: .6rem 1.5rem;
-  display: flex;
-  align-items: flex-start;
-  gap: .6rem;
-  font-size: .82rem;
-  color: #7a5c1a;
-  max-width: 100%;
-}
-.key-notice a { color: var(--twig); }
-.key-notice code {
-  background: rgba(0,0,0,.07);
-  padding: .1rem .3rem;
-  border-radius: 3px;
-  font-size: .8rem;
-}
-.notice-close {
-  background: none;
-  border: none;
-  color: var(--twig);
-  font-size: 1.1rem;
-  cursor: pointer;
-  margin-left: auto;
-  flex-shrink: 0;
 }
 
 /* ── Main ── */
@@ -240,18 +196,4 @@ onMounted(() => {
 
 /* ── Card transitions ── */
 .card-enter-active { transition: all .3s ease; }
-.card-leave-active { transition: all .2s ease; }
-.card-enter-from   { opacity: 0; transform: translateY(-8px); }
-.card-leave-to     { opacity: 0; transform: translateY(8px); }
-
-/* ── Footer ── */
-.footer {
-  text-align: center;
-  padding: 1.2rem;
-  font-size: .75rem;
-  color: var(--sage);
-  border-top: 1px solid var(--parchment-dk);
-  background: var(--cream);
-}
-.footer a { color: var(--moss-lt); }
-</style>
+.
