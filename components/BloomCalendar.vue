@@ -50,16 +50,9 @@
           <div
             v-if="plant.bloom_months.includes(mi + 1)"
             class="bloom-bar"
-            :style="bloomBarStyle(plant, mi)"
+            :style="[bloomBarStyle(plant, mi), { background: getBarBackground(plant.hex_colours) }]"
             :title="plant.common_name + ' blooms - ' + (plant.flower_color ?? 'unknown colour')"
-          >
-            <div
-              v-for="(hex, ci) in plant.hex_colours"
-              :key="ci"
-              class="colour-stripe"
-              :style="{ background: hex }"
-            ></div>
-          </div>
+          ></div>
           <div v-else class="no-bloom"></div>
         </div>
       </div>
@@ -95,6 +88,19 @@ const MONTHS = ['January','February','March','April','May','June',
 
 const currentMonth = new Date().getMonth() + 1
 
+// Helper function to build a single blended stripe if multiple variants exist
+function getBarBackground(colours: string[]): string {
+  if (!colours || colours.length === 0) return 'var(--sage)'
+  if (colours.length === 1) return colours[0]
+  
+  const stopPercentage = 100 / colours.length
+  const gradientStops = colours.map((color, index) => {
+    return `${color} ${index * stopPercentage}%, ${color} ${(index + 1) * stopPercentage}%`
+  }).join(', ')
+  
+  return `linear-gradient(to right, ${gradientStops})`
+}
+
 function bloomBarStyle(plant: GardenPlant, monthIndex: number) {
   const month = monthIndex + 1
   const blooms = plant.bloom_months
@@ -117,7 +123,6 @@ function coverageStyle(month: number) {
   const max   = Math.max(...Object.values(monthCoverage.value).map(arr => arr.length), 1)
   const pct   = count / max
 
-  // Blend from sage-lt → moss based on density
   const r = Math.round(74  + (194 - 74)  * (1 - pct))
   const g = Math.round(103 + (212 - 103) * (1 - pct))
   const b = Math.round(65  + (188 - 65)  * (1 - pct))
@@ -137,7 +142,6 @@ function coverageStyle(month: number) {
   padding: 1rem 0;
 }
 
-/* On mobile, rows behave like stacked individual cards instead of grid rows */
 .plant-row {
   border: 1px solid var(--parchment-dk);
   border-radius: 8px;
@@ -149,7 +153,6 @@ function coverageStyle(month: number) {
   gap: 1rem;
 }
 
-/* Plant label layout adjustments for mobile */
 .plant-label {
   display: flex;
   align-items: center;
@@ -209,42 +212,34 @@ function coverageStyle(month: number) {
 }
 .remove-btn:hover { color: #c05050; }
 
-/* Mobile Month Container: Converts cells into small inline tags */
 .plant-row .cal-cell {
   display: inline-flex;
   height: auto;
   position: relative;
 }
 
-/* Hide empty months on mobile to save vertical space */
 .plant-row .no-bloom {
   display: none;
 }
 
-/* Make bloom bars look like pill tags on mobile */
 .bloom-bar {
   display: flex;
   width: 100%;
   height: 24px;
-  border-radius: 12px !important; /* Force pill shape on mobile */
+  border-radius: 12px !important;
   margin: 0 !important;
   overflow: hidden;
   position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 .bloom-bar:hover { filter: brightness(1.08); cursor: default; }
 
-.colour-stripe {
-  flex: 1;
-  min-width: 3px;
-}
-
-/* Hide complex global headers/coverage on mobile devices */
 .cal-month-head,
 .coverage-row {
   display: none;
 }
 
-/* Empty State */
 .empty-state {
   text-align: center;
   padding: 3rem 1rem;
@@ -260,7 +255,6 @@ function coverageStyle(month: number) {
   font-style: italic;
 }
 
-/* Row animations */
 .row-enter-active { transition: all .35s cubic-bezier(.25,.8,.25,1); }
 .row-leave-active { transition: all .2s ease; }
 .row-enter-from { opacity: 0; transform: translateX(-12px); }
@@ -277,7 +271,6 @@ function coverageStyle(month: number) {
     padding-bottom: .5rem;
   }
 
-  /* Reactivate structural timeline grid */
   .cal-grid {
     display: grid;
     grid-template-columns: 190px repeat(12, minmax(56px, 1fr));
@@ -285,7 +278,6 @@ function coverageStyle(month: number) {
     align-items: center;
   }
 
-  /* Reset row styling from card layout back to inline grid rows */
   .plant-row {
     border: none;
     border-top: 1px solid var(--parchment-dk);
@@ -312,7 +304,6 @@ function coverageStyle(month: number) {
   .plant-sci { font-size: .7rem; }
   .remove-btn { font-size: 1.2rem; padding: 0 .2rem; }
 
-  /* Restore desktop calendar layout */
   .cal-month-head {
     display: block;
     text-align: center;
@@ -338,7 +329,6 @@ function coverageStyle(month: number) {
     background: var(--gold);
   }
 
-  /* Month Name Text Responsiveness */
   .month-full { display: none; }
   .month-abbr { display: inline; }
 
@@ -350,20 +340,17 @@ function coverageStyle(month: number) {
     background: rgba(197,149,74,.06);
   }
 
-  /* Bring back structural grid logic for non-blooming periods */
   .plant-row .no-bloom {
     display: block;
     height: 100%;
   }
 
-  /* Revert bloom bars to continuous line segments */
   .bloom-bar {
     position: absolute;
-    inset: 6px 0;
+    inset: 9px 0;
     height: auto;
   }
 
-  /* Reactivate coverage system */
   .coverage-row {
     display: grid;
     border-top: 2px solid var(--parchment-dk);
