@@ -112,8 +112,15 @@ async function generatePlantData() {
       selectedColours.value = [...previewPlant.value.hex_colours]
     }
   } catch (err: any) {
-    error.value = err.data?.message || err.message || 'Failed to retrieve botanical details.'
     console.error(err)
+    
+    // Check if it's a rate limit error (429)
+    if (err.statusCode === 429 || err.status === 429 || JSON.stringify(err).includes('429')) {
+      error.value = "The AI gardener is taking a quick breather. Please wait about 30 seconds and try your search again!"
+    } else {
+      // Fallback for standard network errors or invalid plants
+      error.value = "Couldn't find botanical details for that plant. Double-check the spelling and try again."
+    }
   } finally {
     loading.value = false
   }
