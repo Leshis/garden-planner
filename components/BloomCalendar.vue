@@ -41,22 +41,18 @@
           <button class="remove-btn" @click="removePlant(plant.id)" title="Remove">×</button>
         </div>
 
-        <div
-          v-for="(_, mi) in MONTHS"
-          :key="mi"
-          class="cal-cell"
-          :class="{ 'is-current-col': mi + 1 === currentMonth }"
-        >
+                <div class="single-bloom-row">
           <div
-            v-if="plant.bloom_months.includes(mi + 1)"
-            class="bloom-bar"
-            :style="[bloomBarStyle(plant, mi), { background: getBarBackground(plant.hex_colours) }]"
-            :title="plant.common_name + ' blooms - ' + (plant.flower_color ?? 'unknown colour')"
+            v-if="plant.bloom_months && plant.bloom_months.length"
+            class="bloom-bar-single"
+            :style="{ background: getBarBackground(plant.hex_colours) }"
+            :title="plant.common_name + ' colour profile - ' + (plant.flower_color ?? 'unknown colour')"
           ></div>
-          <div v-else class="no-bloom"></div>
         </div>
+
       </div>
     </TransitionGroup>
+
 
     <div v-if="plants.length > 0" class="cal-grid coverage-row">
       <div class="cal-label-col coverage-label">
