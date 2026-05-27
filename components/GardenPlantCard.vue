@@ -18,9 +18,8 @@
           :key="i"
           class="swatch"
           :style="{ background: hex }"
-          :title="plant.flower_color?.split(',')[i]?.trim()"
+          :title="plant.flower_color"
         ></div>
-        <span class="colour-label">{{ plant.flower_color ?? 'Unknown colour' }}</span>
       </div>
 
       <div class="card-season" v-if="plant.flowering_season">
@@ -77,7 +76,7 @@ const { removePlant } = useGarden()
   justify-content: space-between;
   align-items: flex-start;
   gap: .5rem;
-  margin-bottom: .4rem;
+  margin-bottom: .3rem;
 }
 
 .card-name {
@@ -109,21 +108,18 @@ const { removePlant } = useGarden()
 .card-colours {
   display: flex;
   align-items: center;
-  gap: .3rem;
-  margin-bottom: .35rem;
+  gap: .35rem;
+  margin-bottom: .45rem;
 }
 
+/* Enhanced swatch definitions so whites and pastels pop cleanly on mobile screens */
 .swatch {
-  width: 14px; height: 14px;
+  width: 14px; 
+  height: 14px;
   border-radius: 50%;
-  border: 1.5px solid rgba(0,0,0,.1);
   flex-shrink: 0;
-}
-
-.colour-label {
-  font-size: .72rem;
-  color: var(--ink-soft);
-  text-transform: capitalize;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.02);
 }
 
 .card-season {
