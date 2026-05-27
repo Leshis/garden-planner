@@ -1,148 +1,128 @@
 <template>
   <div class="search-wrap">
     <div class="search-bar">
-      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
+      <span class="sparkle-icon">✨</span>
       <input
         v-model="query"
         type="text"
         class="search-input"
-        placeholder="Search plants - rose, lavender, tulip..."
-        @input="onInput"
-        @keydown.enter="doSearch"
+        placeholder="Enter any plant name (e.g. Geum Mai Tai, Himalayan Blue Poppy)..."
+        @keydown.enter="generatePlantData"
         autocomplete="off"
         spellcheck="false"
       />
       <button v-if="query" class="clear-btn" @click="clearSearch" aria-label="Clear">×</button>
     </div>
 
-    <Transition name="drop">
-      <div v-if="results.length || loading || error" class="results-panel">
-        <div v-if="loading" class="results-loading">
-          <span class="leaf-spin">🌿</span> Searching…
+    <div v-if="loading || error || previewPlant" class="preview-panel">
+      <div v-if="loading" class="results-loading">
+        <span class="leaf-spin">🌿</span> AI is analyzing botanical data...
+      </div>
+      
+      <div v-else-if="error" class="results-error">
+        ⚠️ {{ error }}
+      </div>
+
+      <div v-else-if="previewPlant" class="preview-card">
+        <div class="preview-header">
+          <div>
+            <h4 class="preview-title">{{ previewPlant.common_name }}</h4>
+            <p class="preview-sci">{{ previewPlant.scientific_name }}</p>
+          </div>
+          <div class="preview-colors">
+            <div 
+              v-for="color in previewPlant.hex_colours" 
+              :key="color" 
+              class="preview-swatch" 
+              :style="{ background: color }"
+            ></div>
+          </div>
         </div>
-        <div v-else-if="error" class="results-error">{{ error }}</div>
-        <ul v-else class="results-list">
-          <li
-            v-for="plant in results"
-            :key="plant.id"
-            class="result-item"
-            :class="{ 'is-added': hasPlant(plant.id) }"
-            @click="selectPlant(plant)"
+
+        <div class="preview-meta-grid">
+          <p><strong>Flower Color:</strong> {{ previewPlant.flower_color }}</p>
+          <p><strong>Flowering Timeline:</strong> {{ previewPlant.flowering_season }}</p>
+          <p v-if="previewPlant.hardiness"><strong>RHS Hardiness:</strong> {{ previewPlant.hardiness }}</p>
+          <p v-if="previewPlant.propagation_season"><strong>Propagation Frame:</strong> {{ previewPlant.propagation_season }}</p>
+        </div>
+
+        <div class="preview-actions">
+          <a 
+            :href="getRhsLink(previewPlant.scientific_name)" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="verify-rhs-btn"
           >
-            <img
-              v-if="plant.default_image?.thumbnail"
-              :src="plant.default_image.thumbnail"
-              :alt="plant.common_name"
-              class="result-thumb"
-            />
-            <div v-else class="result-thumb result-thumb--placeholder">🌸</div>
-            <div class="result-info">
-              <span class="result-name">{{ plant.common_name }}</span>
-              <span class="result-sci">{{ plant.scientific_name?.[0] }}</span>
-            </div>
-            <span v-if="hasPlant(plant.id)" class="result-badge">In garden</span>
-            <span v-else class="result-add">+ Add</span>
-          </li>
-        </ul>
-        <div v-if="!loading && results.length > 0 && hasMore" class="results-more">
-          <button class="more-btn" @click="loadMore" :disabled="loadingMore">
-            {{ loadingMore ? '…' : 'Load more' }}
+            Verify on RHS Website 🔗
+          </a>
+          
+          <button @click="commitPlantToGarden" class="add-garden-btn">
+            + Add to My Calendar
           </button>
         </div>
       </div>
-    </Transition>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { searchPlants, fetchPlantDetail, toGardenPlant, type PerenualSearchResult } from '~/composables/usePerenual'
+import type { GardenPlant } from '~/composables/usePerenual'
 
-const config = useRuntimeConfig()
-const apiKey = config.public.perenualKey as string
-
-const { addPlant, hasPlant } = useGarden()
+const { addPlant } = useGarden()
 
 const query = ref('')
-const results = ref<PerenualSearchResult[]>([])
 const loading = ref(false)
-const loadingMore = ref(false)
 const error = ref('')
-const page = ref(1)
-const hasMore = ref(false)
+const previewPlant = ref<Omit<GardenPlant, 'id'> | null>(null)
 
-let debounceTimer: ReturnType<typeof setTimeout>
-
-function onInput() {
-  clearTimeout(debounceTimer)
-  error.value = ''
-  if (query.value.length < 2) { results.value = []; return }
-  debounceTimer = setTimeout(doSearch, 420)
-}
-
-async function doSearch() {
+async function generatePlantData() {
   if (!query.value.trim()) return
   loading.value = true
   error.value = ''
-  page.value = 1
+  previewPlant.value = null
+
   try {
-    const res = await searchPlants(query.value, apiKey, 1)
-    results.value = res.data ?? []
-    hasMore.value = res.current_page < res.last_page
-  } catch (e: any) {
-    // Stringify the full error details so you can read the API status or message on your mobile screen
-    const errorDetails = e.response?._data?.message || e.message || JSON.stringify(e);
-    error.value = `API Error: ${errorDetails}`;
-    console.error(e)
+    const data = await $fetch('/api/generate-plant', {
+      method: 'POST',
+      body: { plantQuery: query.value.trim() }
+    })
+    previewPlant.value = data as Omit<GardenPlant, 'id'>
+  } catch (err: any) {
+    error.value = err.data?.message || err.message || 'Failed to retrieve botanical details.'
+    console.error(err)
   } finally {
     loading.value = false
   }
 }
 
-async function loadMore() {
-  loadingMore.value = true
-  try {
-    page.value++
-    const res = await searchPlants(query.value, apiKey, page.value)
-    results.value.push(...(res.data ?? []))
-    hasMore.value = res.current_page < res.last_page
-  } catch (e: any) {
-    const errorDetails = e.response?._data?.message || e.message || JSON.stringify(e);
-    error.value = `Load more failed: ${errorDetails}`;
-    console.error(e)
-  } finally {
-    loadingMore.value = false
+function commitPlantToGarden() {
+  if (!previewPlant.value) return
+  
+  const formattedPlant: GardenPlant = {
+    ...previewPlant.value,
+    id: `plant-${Date.now()}` // Unique temporal string tracker
+  }
+
+  const success = addPlant(formattedPlant)
+  if (success) {
+    clearSearch()
   }
 }
 
-async function selectPlant(plant: PerenualSearchResult) {
-  if (hasPlant(plant.id)) return
-  try {
-    const detail = await fetchPlantDetail(plant.id, apiKey)
-    const gardenPlant = toGardenPlant(detail)
-    const added = addPlant(gardenPlant)
-    if (added) {
-      clearSearch()
-    }
-  } catch (e: any) {
-    // Expose detail-fetching issues directly to the UI error state
-    const errorDetails = e.response?._data?.message || e.message || JSON.stringify(e);
-    error.value = `Detail fetch failed: ${errorDetails}`;
-    console.error('Failed to fetch plant detail', e)
-  }
+function getRhsLink(scientificName: string | undefined): string {
+  if (!scientificName) return 'https://www.rhs.org.uk/plants'
+  return `https://www.rhs.org.uk/plants/search-results?query=${encodeURIComponent(scientificName.trim())}`
 }
 
 function clearSearch() {
   query.value = ''
-  results.value = []
+  previewPlant.value = null
   error.value = ''
 }
 </script>
 
-
 <style scoped>
-.search-wrap { position: relative; width: 100%; max-width: 560px; }
+.search-wrap { position: relative; width: 100%; max-width: 560px; margin-bottom: 1.5rem; }
 
 .search-bar {
   display: flex;
@@ -152,14 +132,9 @@ function clearSearch() {
   border-radius: 40px;
   padding: 0 1.2rem;
   gap: .6rem;
-  transition: border-color .2s, box-shadow .2s;
-}
-.search-bar:focus-within {
-  border-color: var(--moss);
-  box-shadow: 0 0 0 3px rgba(74,103,65,.12);
 }
 
-.search-icon { width: 18px; height: 18px; color: var(--sage); flex-shrink: 0; }
+.sparkle-icon { font-size: 1.1rem; color: var(--gold); }
 
 .search-input {
   flex: 1;
@@ -171,7 +146,6 @@ function clearSearch() {
   padding: .75rem 0;
   outline: none;
 }
-.search-input::placeholder { color: var(--sage); }
 
 .clear-btn {
   background: none;
@@ -179,131 +153,63 @@ function clearSearch() {
   color: var(--sage);
   font-size: 1.3rem;
   cursor: pointer;
-  line-height: 1;
-  padding: 0;
-  transition: color .15s;
 }
-.clear-btn:hover { color: var(--ink); }
 
-/* ── Results panel ── */
-.results-panel {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0; right: 0;
+.preview-panel {
+  margin-top: 10px;
   background: var(--cream);
   border: 1.5px solid var(--sage-lt);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  overflow: hidden;
-  z-index: 100;
-  max-height: 420px;
-  overflow-y: auto;
+  padding: 1.25rem;
 }
 
-.results-loading, .results-error {
-  padding: 1.2rem 1.4rem;
-  font-size: .9rem;
-  color: var(--ink-soft);
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-}
+.results-loading { color: var(--ink-soft); display: flex; align-items: center; gap: .5rem; }
 .results-error { color: #c05050; }
 
 .leaf-spin { display: inline-block; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.results-list { list-style: none; }
+.preview-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+.preview-title { font-family: var(--font-display); font-size: 1.2rem; color: var(--ink); text-transform: capitalize; }
+.preview-sci { font-size: .85rem; color: var(--moss-lt); font-style: italic; }
 
-.result-item {
-  display: flex;
-  align-items: center;
-  gap: .9rem;
-  padding: .65rem 1.2rem;
-  cursor: pointer;
-  transition: background .15s;
-  border-bottom: 1px solid var(--parchment-dk);
-}
-.result-item:last-child { border-bottom: none; }
-.result-item:hover { background: var(--parchment-dk); }
-.result-item.is-added { opacity: .6; cursor: default; }
+.preview-colors { display: flex; gap: 4px; }
+.preview-swatch { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
 
-.result-thumb {
-  width: 44px; height: 44px;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  flex-shrink: 0;
-  background: var(--sage-lt);
-}
-.result-thumb--placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
-}
+.preview-meta-grid { font-size: .85rem; display: grid; grid-template-columns: 1fr; gap: .5rem; margin-bottom: 1.25rem; }
 
-.result-info { flex: 1; min-width: 0; }
-.result-name {
+.preview-actions { display: flex; flex-direction: column; gap: 8px; }
+
+.verify-rhs-btn {
   display: block;
-  font-size: .9rem;
-  font-weight: 500;
-  color: var(--ink);
-  text-transform: capitalize;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.result-sci {
-  display: block;
-  font-size: .78rem;
-  color: var(--moss-lt);
-  font-style: italic;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.result-add {
-  font-size: .78rem;
-  font-weight: 500;
-  color: var(--moss);
-  background: var(--sage-lt);
-  padding: .2rem .65rem;
-  border-radius: 20px;
-  flex-shrink: 0;
-  transition: background .15s;
-}
-.result-item:hover .result-add { background: var(--sage); color: white; }
-
-.result-badge {
-  font-size: .75rem;
+  text-align: center;
+  text-decoration: none;
+  font-size: .82rem;
   color: var(--twig);
   background: #f0e6d4;
-  padding: .2rem .65rem;
-  border-radius: 20px;
-  flex-shrink: 0;
+  padding: .5rem;
+  border-radius: var(--radius);
+  font-weight: 500;
+  transition: background .2s;
 }
+.verify-rhs-btn:hover { background: var(--parchment-dk); }
 
-.results-more {
-  padding: .8rem;
-  text-align: center;
-  border-top: 1px solid var(--parchment-dk);
-}
-.more-btn {
-  background: none;
-  border: 1px solid var(--sage);
-  border-radius: 20px;
-  padding: .35rem 1.2rem;
+.add-garden-btn {
+  background: var(--moss);
+  color: white;
+  border: none;
+  padding: .6rem;
+  border-radius: var(--radius);
   font-family: var(--font-body);
-  font-size: .82rem;
-  color: var(--moss);
+  font-weight: 500;
   cursor: pointer;
-  transition: background .15s;
+  font-size: .9rem;
 }
-.more-btn:hover:not(:disabled) { background: var(--sage-lt); }
-.more-btn:disabled { opacity: .5; cursor: default; }
+.add-garden-btn:hover { background: var(--ink-soft); }
 
-/* ── Transition ── */
-.drop-enter-active, .drop-leave-active { transition: opacity .18s, transform .18s; }
-.drop-enter-from, .drop-leave-to { opacity: 0; transform: translateY(-6px); }
+@media (min-width: 480px) {
+  .preview-actions { flex-direction: row; justify-content: space-between; }
+  .verify-rhs-btn, .add-garden-btn { flex: 1; text-align: center; }
+}
 </style>
