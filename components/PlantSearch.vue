@@ -18,7 +18,7 @@
       <div v-if="loading" class="results-loading">
         <span class="leaf-spin">🌿</span> AI is analyzing botanical data...
       </div>
-      
+
       <div v-else-if="error" class="results-error">
         ⚠️ {{ error }}
       </div>
@@ -29,21 +29,33 @@
             <h4 class="preview-title">{{ previewPlant.common_name }}</h4>
             <p class="preview-sci">{{ previewPlant.scientific_name }}</p>
           </div>
-          <div class="preview-colors">
-            <div 
-              v-for="color in previewPlant.hex_colours" 
-              :key="color" 
-              class="preview-swatch" 
-              :style="{ background: color }"
-            ></div>
-          </div>
         </div>
 
         <div class="preview-meta-grid">
-          <p><strong>Flower Color:</strong> {{ previewPlant.flower_color }}</p>
-          <p><strong>Flowering Timeline:</strong> {{ previewPlant.flowering_season }}</p>
-          <p v-if="previewPlant.hardiness"><strong>RHS Hardiness:</strong> {{ previewPlant.hardiness }}</p>
-          <p v-if="previewPlant.propagation_season"><strong>Propagation Frame:</strong> {{ previewPlant.propagation_season }}</p>
+          <div class="color-selector-block">
+            <label class="block-label">🌸 Select flower variants for your garden (Tap to toggle):</label>
+            <div class="interactive-swatches">
+              <button 
+                v-for="color in previewPlant.hex_colours" 
+                :key="color" 
+                class="selectable-swatch"
+                :class="{ 'is-selected': selectedColours.includes(color) }"
+                :style="{ background: color }"
+                @click="toggleColourSelection(color)"
+                type="button"
+                :title="`Toggle ${color}`"
+              >
+                <span v-if="selectedColours.includes(color)" class="check-mark">✓</span>
+              </button>
+            </div>
+            <p class="color-hint-text">Detected base colors: {{ previewPlant.flower_color }}</p>
+          </div>
+
+          <div class="info-metrics">
+            <p><strong>Flowering Timeline:</strong> {{ previewPlant.flowering_season }}</p>
+            <p v-if="previewPlant.hardiness"><strong>RHS Hardiness:</strong> {{ previewPlant.hardiness }}</p>
+            <p v-if="previewPlant.propagation_season"><strong>Propagation Frame:</strong> {{ previewPlant.propagation_season }}</p>
+          </div>
         </div>
 
         <div class="preview-actions">
@@ -55,9 +67,13 @@
           >
             Verify on RHS Website 🔗
           </a>
-          
-          <button @click="commitPlantToGarden" class="add-garden-btn">
-            + Add to My Calendar
+
+          <button 
+            @click="commitPlantToGarden" 
+            class="add-garden-btn"
+            :disabled="selectedColours.length === 0"
+          >
+            {{ selectedColours.length === 0 ? 'Select a colour variant' : '+ Add to My Calendar' }}
           </button>
         </div>
       </div>
@@ -75,11 +91,15 @@ const loading = ref(false)
 const error = ref('')
 const previewPlant = ref<Omit<GardenPlant, 'id'> | null>(null)
 
+// Track toggled selections
+const selectedColours = ref<string[]>([])
+
 async function generatePlantData() {
   if (!query.value.trim()) return
   loading.value = true
   error.value = ''
   previewPlant.value = null
+  selectedColours.value = []
 
   try {
     const data = await $fetch('/api/generate-plant', {
@@ -87,6 +107,10 @@ async function generatePlantData() {
       body: { plantQuery: query.value.trim() }
     })
     previewPlant.value = data as Omit<GardenPlant, 'id'>
+    
+    if (previewPlant.value.hex_colours) {
+      selectedColours.value = [...previewPlant.value.hex_colours]
+    }
   } catch (err: any) {
     error.value = err.data?.message || err.message || 'Failed to retrieve botanical details.'
     console.error(err)
@@ -95,12 +119,24 @@ async function generatePlantData() {
   }
 }
 
+function toggleColourSelection(color: string) {
+  if (selectedColours.value.includes(color)) {
+    // Keep at least one variation highlighted
+    if (selectedColours.value.length > 1) {
+      selectedColours.value = selectedColours.value.filter(c => c !== color)
+    }
+  } else {
+    selectedColours.value.push(color)
+  }
+}
+
 function commitPlantToGarden() {
-  if (!previewPlant.value) return
+  if (!previewPlant.value || selectedColours.value.length === 0) return
   
   const formattedPlant: GardenPlant = {
     ...previewPlant.value,
-    id: `plant-${Date.now()}` // Unique temporal string tracker
+    hex_colours: [...selectedColours.value], // Save only selected variants
+    id: `plant-${Date.now()}` 
   }
 
   const success = addPlant(formattedPlant)
@@ -117,6 +153,7 @@ function getRhsLink(scientificName: string | undefined): string {
 function clearSearch() {
   query.value = ''
   previewPlant.value = null
+  selectedColours.value = []
   error.value = ''
 }
 </script>
@@ -170,14 +207,53 @@ function clearSearch() {
 .leaf-spin { display: inline-block; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.preview-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+.preview-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.2rem; }
 .preview-title { font-family: var(--font-display); font-size: 1.2rem; color: var(--ink); text-transform: capitalize; }
 .preview-sci { font-size: .85rem; color: var(--moss-lt); font-style: italic; }
 
-.preview-colors { display: flex; gap: 4px; }
-.preview-swatch { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
+.preview-meta-grid { display: flex; flex-direction: column; gap: 1.2rem; margin-bottom: 1.5rem; }
 
-.preview-meta-grid { font-size: .85rem; display: grid; grid-template-columns: 1fr; gap: .5rem; margin-bottom: 1.25rem; }
+/* Interactive Selection Block */
+.color-selector-block {
+  background: #ffffff;
+  border: 1px solid var(--parchment-dk);
+  border-radius: var(--radius);
+  padding: 0.85rem;
+}
+.block-label { font-size: 0.82rem; font-weight: 600; color: var(--ink); display: block; margin-bottom: 0.6rem; }
+.interactive-swatches { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* Fixed Disappearing White Flower Problem with shadow + borders */
+.selectable-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.15s, opacity 0.15s;
+  
+  border: 1px solid rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.selectable-swatch:hover { transform: scale(1.08); }
+
+.selectable-swatch:not(.is-selected) {
+  opacity: 0.35;
+  border-style: dashed;
+}
+
+.check-mark {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+.color-hint-text { font-size: 0.75rem; color: var(--ink-soft); margin-top: 0.5rem; font-style: italic; }
+.info-metrics { font-size: .85rem; display: flex; flex-direction: column; gap: .4rem; }
 
 .preview-actions { display: flex; flex-direction: column; gap: 8px; }
 
@@ -207,6 +283,7 @@ function clearSearch() {
   font-size: .9rem;
 }
 .add-garden-btn:hover { background: var(--ink-soft); }
+.add-garden-btn:disabled { background: var(--sage-lt); color: var(--ink-soft); cursor: not-allowed; }
 
 @media (min-width: 480px) {
   .preview-actions { flex-direction: row; justify-content: space-between; }
