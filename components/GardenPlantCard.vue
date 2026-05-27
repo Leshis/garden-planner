@@ -1,89 +1,33 @@
 <template>
-  <div class="search-wrap">
-    <div class="search-bar">
-      <span class="sparkle-icon">✨</span>
-      <input
-        v-model="query"
-        type="text"
-        class="search-input"
-        placeholder="Enter any plant name (e.g. Geum Mai Tai, Himalayan Blue Poppy)..."
-        @keydown.enter="generatePlantData"
-        autocomplete="off"
-        spellcheck="false"
-      />
-      <button v-if="query" class="clear-btn" @click="clearSearch" aria-label="Clear">×</button>
-    </div>
+  <div class="card" :style="{ borderLeftColor: plant.hex_colours[0] }">
+    <img v-if="plant.image" :src="plant.image" :alt="plant.common_name" class="card-img" />
+    <div v-else class="card-img card-img--empty">🌸</div>
 
-    <div v-if="loading || error || previewPlant" class="preview-panel">
-      <div v-if="loading" class="results-loading">
-        <span class="leaf-spin">🌿</span> AI is analyzing botanical data...
+    <div class="card-body">
+      <div class="card-top">
+        <div>
+          <div class="card-name">{{ plant.common_name }}</div>
+          <div class="card-sci">{{ plant.scientific_name }}</div>
+        </div>
+        <button class="card-remove" @click="removePlant(plant.id)" title="Remove from garden">×</button>
       </div>
 
-      <div v-else-if="error" class="results-error">
-        ⚠️ {{ error }}
+      <div class="card-colours" v-if="plant.hex_colours && plant.hex_colours.length">
+        <div
+          class="swatch"
+          :style="{ background: plant.hex_colours[0] }"
+          :title="plant.flower_color"
+        ></div>
       </div>
 
-      <div v-else-if="previewPlant" class="preview-card">
-        <div class="preview-header">
-          <div>
-            <h4 class="preview-title">{{ previewPlant.common_name }}</h4>
-            <p class="preview-sci">{{ previewPlant.scientific_name }}</p>
-          </div>
-          
-          <div class="preview-colors-row">
-            <div 
-              v-for="color in previewPlant.hex_colours" 
-              :key="color" 
-              class="preview-circle-swatch" 
-              :style="{ background: color }"
-            ></div>
-          </div>
-        </div>
-
-        <div class="preview-meta-grid">
-          <p><strong>Flower Color:</strong> {{ previewPlant.flower_color }}</p>
-          <p><strong>Flowering Timeline:</strong> {{ previewPlant.flowering_season }}</p>
-          <p v-if="previewPlant.hardiness"><strong>RHS Hardiness:</strong> {{ previewPlant.hardiness }}</p>
-          <p v-if="previewPlant.propagation_season"><strong>Propagation Frame:</strong> {{ previewPlant.propagation_season }}</p>
-        </div>
-
-        <div class="color-selector-block">
-          <label class="block-label">🌸 Select flower variants for your garden (Tap to toggle):</label>
-          <div class="interactive-swatches">
-            <button 
-              v-for="color in previewPlant.hex_colours" 
-              :key="color" 
-              class="selectable-swatch"
-              :class="{ 'is-selected': selectedColours.includes(color) }"
-              :style="{ background: color }"
-              @click="toggleColourSelection(color)"
-              type="button"
-              :title="`Toggle ${color}`"
-            >
-              <span v-if="selectedColours.includes(color)" class="check-mark">✓</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="preview-actions">
-          <a 
-            :href="getRhsLink(previewPlant.scientific_name)" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            class="verify-rhs-btn"
-          >
-            Verify on RHS Website 🔗
-          </a>
-
-          <button 
-            @click="commitPlantToGarden" 
-            class="add-garden-btn"
-            :disabled="selectedColours.length === 0"
-          >
-            {{ selectedColours.length === 0 ? 'Select a colour variant' : '+ Add to My Calendar' }}
-          </button>
-        </div>
+      <div class="card-season" v-if="plant.flowering_season">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" class="season-icon">
+          <circle cx="8" cy="8" r="3"/>
+          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>
+        </svg>
+        {{ plant.flowering_season }}
       </div>
+      <div v-else class="card-season card-season--unknown">Season unknown</div>
     </div>
   </div>
 </template>
@@ -91,223 +35,107 @@
 <script setup lang="ts">
 import type { GardenPlant } from '~/composables/usePerenual'
 
-const { addPlant } = useGarden()
-
-const query = ref('')
-const loading = ref(false)
-const error = ref('')
-const previewPlant = ref<Omit<GardenPlant, 'id'> | null>(null)
-
-// Selection tracker array mapping
-const selectedColours = ref<string[]>([])
-
-async function generatePlantData() {
-  if (!query.value.trim()) return
-  loading.value = true
-  error.value = ''
-  previewPlant.value = null
-  selectedColours.value = []
-
-  try {
-    const data = await $fetch('/api/generate-plant', {
-      method: 'POST',
-      body: { plantQuery: query.value.trim() }
-    })
-    previewPlant.value = data as Omit<GardenPlant, 'id'>
-    
-    if (previewPlant.value.hex_colours) {
-      selectedColours.value = [...previewPlant.value.hex_colours]
-    }
-  } catch (err: any) {
-    error.value = err.data?.message || err.message || 'Failed to retrieve botanical details.'
-    console.error(err)
-  } finally {
-    loading.value = false
-  }
-}
-
-function toggleColourSelection(color: string) {
-  if (selectedColours.value.includes(color)) {
-    if (selectedColours.value.length > 1) {
-      selectedColours.value = selectedColours.value.filter(c => c !== color)
-    }
-  } else {
-    selectedColours.value.push(color)
-  }
-}
-
-function commitPlantToGarden() {
-  if (!previewPlant.value || selectedColours.value.length === 0) return
-  
-  const formattedPlant: GardenPlant = {
-    ...previewPlant.value,
-    hex_colours: [...selectedColours.value],
-    id: `plant-${Date.now()}` 
-  }
-
-  const success = addPlant(formattedPlant)
-  if (success) {
-    clearSearch()
-  }
-}
-
-function getRhsLink(scientificName: string | undefined): string {
-  if (!scientificName) return 'https://www.rhs.org.uk/plants'
-  return `https://www.rhs.org.uk/plants/search-results?query=${encodeURIComponent(scientificName.trim())}`
-}
-
-function clearSearch() {
-  query.value = ''
-  previewPlant.value = null
-  selectedColours.value = []
-  error.value = ''
-}
+defineProps<{ plant: GardenPlant }>()
+const { removePlant } = useGarden()
 </script>
 
 <style scoped>
-.search-wrap { position: relative; width: 100%; max-width: 560px; margin-bottom: 1.5rem; }
-
-.search-bar {
+.card {
   display: flex;
-  align-items: center;
+  gap: .75rem;
   background: var(--cream);
-  border: 1.5px solid var(--sage);
-  border-radius: 40px;
-  padding: 0 1.2rem;
-  gap: .6rem;
-}
-
-.sparkle-icon { font-size: 1.1rem; color: var(--gold); }
-
-.search-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: .95rem;
-  color: var(--ink);
-  padding: .75rem 0;
-  outline: none;
-}
-
-.clear-btn {
-  background: none;
-  border: none;
-  color: var(--sage);
-  font-size: 1.3rem;
-  cursor: pointer;
-}
-
-.preview-panel {
-  margin-top: 10px;
-  background: var(--cream);
-  border: 1.5px solid var(--sage-lt);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 1.25rem;
-}
-
-.results-loading { color: var(--ink-soft); display: flex; align-items: center; gap: .5rem; }
-.results-error { color: #c05050; }
-
-.leaf-spin { display: inline-block; animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Single row layout constraints */
-.preview-header { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: flex-start; 
-  margin-bottom: 1rem; 
-  gap: 1rem;
-}
-.preview-title { font-family: var(--font-display); font-size: 1.2rem; color: var(--ink); text-transform: capitalize; }
-.preview-sci { font-size: .85rem; color: var(--moss-lt); font-style: italic; }
-
-.preview-colors-row { 
-  display: flex; 
-  gap: 6px; 
-  align-items: center;
-  flex-shrink: 0;
-  margin-top: 4px;
-}
-
-.preview-circle-swatch { 
-  width: 16px; 
-  height: 16px; 
-  border-radius: 50%; 
-  border: 1px solid rgba(0, 0, 0, 0.18);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-
-.preview-meta-grid { font-size: .85rem; display: grid; grid-template-columns: 1fr; gap: .5rem; margin-bottom: 1rem; }
-
-/* Interactive Selection Block styles */
-.color-selector-block {
-  background: #ffffff;
   border: 1px solid var(--parchment-dk);
+  border-left: 4px solid var(--sage);
   border-radius: var(--radius);
-  padding: 0.85rem;
-  margin-bottom: 1.25rem;
+  padding: .75rem;
+  transition: box-shadow .2s;
 }
-.block-label { font-size: 0.82rem; font-weight: 600; color: var(--ink); display: block; margin-bottom: 0.6rem; }
-.interactive-swatches { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.card:hover { box-shadow: var(--shadow); }
 
-.selectable-swatch {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  cursor: pointer;
+.card-img {
+  width: 52px; height: 52px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--sage-lt);
+  align-self: flex-start;
+}
+.card-img--empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  transition: transform 0.15s, opacity 0.15s;
-  border: 1px solid rgba(0, 0, 0, 0.22);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-.selectable-swatch:hover { transform: scale(1.08); }
-.selectable-swatch:not(.is-selected) { opacity: 0.35; border-style: dashed; }
-
-.check-mark {
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.8), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+  font-size: 1.5rem;
 }
 
-.preview-actions { display: flex; flex-direction: column; gap: 8px; }
+.card-body { flex: 1; min-width: 0; }
 
-.verify-rhs-btn {
-  display: block;
-  text-align: center;
-  text-decoration: none;
-  font-size: .82rem;
-  color: var(--twig);
-  background: #f0e6d4;
-  padding: .5rem;
-  border-radius: var(--radius);
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: .5rem;
+  margin-bottom: .3rem;
+}
+
+.card-name {
+  font-size: .85rem;
   font-weight: 500;
-  transition: background .2s;
+  color: var(--ink);
+  text-transform: capitalize;
+  line-height: 1.3;
 }
-.verify-rhs-btn:hover { background: var(--parchment-dk); }
+.card-sci {
+  font-size: .72rem;
+  color: var(--moss-lt);
+  font-style: italic;
+}
 
-.add-garden-btn {
-  background: var(--moss);
-  color: white;
+.card-remove {
+  background: none;
   border: none;
-  padding: .6rem;
-  border-radius: var(--radius);
-  font-family: var(--font-body);
-  font-weight: 500;
+  color: var(--sage);
+  font-size: 1.1rem;
   cursor: pointer;
-  font-size: .9rem;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color .15s;
 }
-.add-garden-btn:hover { background: var(--ink-soft); }
-.add-garden-btn:disabled { background: var(--sage-lt); color: var(--ink-soft); cursor: not-allowed; }
+.card-remove:hover { color: #c05050; }
 
-@media (min-width: 480px) {
-  .preview-actions { flex-direction: row; justify-content: space-between; }
-  .verify-rhs-btn, .add-garden-btn { flex: 1; text-align: center; }
+.card-colours {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  margin-bottom: .45rem;
+}
+
+/* Enhanced swatch definitions so whites and pastels pop cleanly on mobile screens */
+.swatch {
+  width: 14px; 
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.02);
+}
+
+.card-season {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .72rem;
+  color: var(--moss);
+  background: var(--parchment-dk);
+  padding: .2rem .55rem;
+  border-radius: 20px;
+  width: fit-content;
+  text-transform: capitalize;
+}
+.card-season--unknown { color: var(--sage); }
+
+.season-icon {
+  width: 12px; height: 12px;
+  flex-shrink: 0;
 }
 </style>
