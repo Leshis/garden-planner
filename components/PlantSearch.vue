@@ -20,7 +20,8 @@
       </div>
 
       <div v-else-if="error" class="results-error">
-        ⚠️ {{ error }}
+        <div style="font-weight: bold; margin-bottom: 5px;">⚠️ Dev Error Caught:</div>
+        <pre style="white-space: pre-wrap; word-break: break-all; font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 8px; border-radius: 4px;">{{ error }}</pre>
       </div>
 
       <div v-else-if="previewPlant" class="preview-card">
@@ -114,13 +115,14 @@ async function generatePlantData() {
   } catch (err: any) {
     console.error(err)
     
-    // Check if it's a rate limit error (429)
-    if (err.statusCode === 429 || err.status === 429 || JSON.stringify(err).includes('429')) {
-      error.value = "The AI gardener is taking a quick breather. Please wait about 30 seconds and try your search again!"
-    } else {
-      // Fallback for standard network errors or invalid plants
-      error.value = "Couldn't find botanical details for that plant. Double-check the spelling and try again."
-    }
+    // Mobile Dev Mode: Dig up as much raw error information as possible
+    const statusText = err.statusCode || err.status ? `[Status ${err.statusCode || err.status}] ` : ''
+    const messageText = err.message || 'Unknown error message'
+    const dataText = err.data ? `\nResponse Data: ${typeof err.data === 'object' ? JSON.stringify(err.data, null, 2) : err.data}` : ''
+    
+    // Fallback directly to the entire stringified object if properties are empty
+    error.value = `${statusText}${messageText}${dataText}` || `Raw Error Trace: ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`
+    
   } finally {
     loading.value = false
   }
@@ -128,7 +130,6 @@ async function generatePlantData() {
 
 function toggleColourSelection(color: string) {
   if (selectedColours.value.includes(color)) {
-    // Keep at least one variation highlighted
     if (selectedColours.value.length > 1) {
       selectedColours.value = selectedColours.value.filter(c => c !== color)
     }
@@ -142,7 +143,7 @@ function commitPlantToGarden() {
   
   const formattedPlant: GardenPlant = {
     ...previewPlant.value,
-    hex_colours: [...selectedColours.value], // Save only selected variants
+    hex_colours: [...selectedColours.value],
     id: `plant-${Date.now()}` 
   }
 
@@ -220,7 +221,6 @@ function clearSearch() {
 
 .preview-meta-grid { display: flex; flex-direction: column; gap: 1.2rem; margin-bottom: 1.5rem; }
 
-/* Interactive Selection Block */
 .color-selector-block {
   background: #ffffff;
   border: 1px solid var(--parchment-dk);
@@ -230,7 +230,6 @@ function clearSearch() {
 .block-label { font-size: 0.82rem; font-weight: 600; color: var(--ink); display: block; margin-bottom: 0.6rem; }
 .interactive-swatches { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
-/* Fixed Disappearing White Flower Problem with shadow + borders */
 .selectable-swatch {
   width: 34px;
   height: 34px;
