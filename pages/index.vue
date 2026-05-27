@@ -196,4 +196,17 @@ onMounted(() => {
 
 /* ── Card transitions ── */
 .card-enter-active { transition: all .3s ease; }
-.
+.card-leave-active { transition: all .2s ease; }
+.card-enter-from   { opacity: 0; transform: translateY(-8px); }
+.card-leave-to     { opacity: 0; transform: translateY(8px); }
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 1.2rem;
+  font-size: .75rem;
+  color: var(--sage);
+  border-top: 1px solid var(--parchment-dk);
+  background: var(--cream);
+}
+</style>
