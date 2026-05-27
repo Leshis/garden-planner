@@ -5,9 +5,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      // Get a free API key at https://perenual.com/docs/api
-      // Replace with your own key in .env as NUXT_PUBLIC_PERENUAL_KEY=your_key
-      perenualKey: process.env.NUXT_PUBLIC_PERENUAL_KEY || 'sk-demo-key'
+       geminiApiKey: process.env.GEMINI_API_KEY
     }
   },
 
