@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   modules: [
       '@nuxtjs/supabase'
-  ]
+  ],
   runtimeConfig: {
     public: {
        geminiApiKey: process.env.GEMINI_API_KEY
