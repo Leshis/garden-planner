@@ -33,6 +33,7 @@
           <span class="plant-count">{{ plants.length }} plant{{ plants.length !== 1 ? 's' : '' }}</span>
         </div>
         <BloomCalendar />
+        <CompanionFinder />
       </section>
 
       <aside v-if="plants.length > 0" class="garden-sidebar">
