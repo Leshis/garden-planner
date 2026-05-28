@@ -143,7 +143,7 @@ async function commitPlantToGarden() {
   
   // Format the payload to match your brand new public.plants schema columns exactly.
   // We leave out 'id' completely as Supabase handles generating the primary key UUID.
-  const formattedPlant = {
+    const formattedPlant = {
     common_name: previewPlant.value.common_name,
     scientific_name: previewPlant.value.scientific_name,
     flower_color: previewPlant.value.flower_color,
@@ -152,8 +152,10 @@ async function commitPlantToGarden() {
     bloom_months: previewPlant.value.bloom_months,
     hardiness: previewPlant.value.hardiness || null,
     watering: previewPlant.value.watering || null,
-    image: previewPlant.value.image || null
+    image: previewPlant.value.image || null,
+    nickname: null // ADDED: Matches your database column
   }
+
 
   // Await the asynchronous database action from the composable
   const success = await addPlant(formattedPlant)
