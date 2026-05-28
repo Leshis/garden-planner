@@ -138,16 +138,24 @@ function toggleColourSelection(color: string) {
   }
 }
 
-function commitPlantToGarden() {
+async function commitPlantToGarden() {
   if (!previewPlant.value || selectedColours.value.length === 0) return
   
-  const formattedPlant: GardenPlant = {
-    ...previewPlant.value,
-    hex_colours: [...selectedColours.value],
-    id: `plant-${Date.now()}` 
+  // 1. Build the payload matching your database columns
+  const formattedPlant = {
+    common_name: previewPlant.value.common_name,
+    scientific_name: previewPlant.value.scientific_name,
+    flower_color: previewPlant.value.flower_color,
+    hex_colours: [...selectedColours.value], // Array of hex strings
+    bloom_months: previewPlant.value.bloom_months,
+    flowering_season: previewPlant.value.flowering_season,
+    nickname: ''
+    // Note: Leave 'id' out completely. Supabase will generate a fresh UUID automatically!
   }
 
-  const success = addPlant(formattedPlant)
+  // 2. Await the asynchronous composable action
+  const success = await addPlant(formattedPlant)
+  
   if (success) {
     clearSearch()
   }
