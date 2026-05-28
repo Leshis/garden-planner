@@ -141,19 +141,21 @@ function toggleColourSelection(color: string) {
 async function commitPlantToGarden() {
   if (!previewPlant.value || selectedColours.value.length === 0) return
   
-  // 1. Build the payload matching your database columns
+  // Format the payload to match your brand new public.plants schema columns exactly.
+  // We leave out 'id' completely as Supabase handles generating the primary key UUID.
   const formattedPlant = {
     common_name: previewPlant.value.common_name,
     scientific_name: previewPlant.value.scientific_name,
     flower_color: previewPlant.value.flower_color,
-    hex_colours: [...selectedColours.value], // Array of hex strings
-    bloom_months: previewPlant.value.bloom_months,
+    hex_colours: [...selectedColours.value],
     flowering_season: previewPlant.value.flowering_season,
-    nickname: ''
-    // Note: Leave 'id' out completely. Supabase will generate a fresh UUID automatically!
+    bloom_months: previewPlant.value.bloom_months,
+    hardiness: previewPlant.value.hardiness || null,
+    watering: previewPlant.value.watering || null,
+    image: previewPlant.value.image || null
   }
 
-  // 2. Await the asynchronous composable action
+  // Await the asynchronous database action from the composable
   const success = await addPlant(formattedPlant)
   
   if (success) {
