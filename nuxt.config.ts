@@ -6,11 +6,9 @@ export default defineNuxtConfig({
       '@nuxtjs/supabase'
   ],
   runtimeConfig: {
-    public: {
-       geminiApiKey: process.env.GEMINI_API_KEY
-    }
+    geminiApiKey: process.env.GEMINI_API_KEY,
+    public: {}
   },
-
   app: {
     head: {
       title: 'Garden Bloom Calendar',
